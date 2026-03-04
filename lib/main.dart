@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
-import 'core/notifications/notification_service.dart';
 import 'features/habits/presentation/screens/home_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize notification service
-  await NotificationService.instance.init();
-  
   runApp(
     const ProviderScope(
       child: HabitTrackerApp(),
