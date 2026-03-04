@@ -71,7 +71,7 @@ class SettingsScreen extends ConsumerWidget {
             context,
             icon: Icons.dark_mode_outlined,
             title: 'Dark Mode',
-            subtitle: 'Coming soon',
+            subtitle: 'Switch between light and dark themes',
             value: settings.darkModeEnabled,
             onChanged: (value) {
               ref.read(settingsProvider.notifier).setDarkModeEnabled(value);

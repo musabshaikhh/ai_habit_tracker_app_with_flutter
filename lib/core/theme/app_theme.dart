@@ -62,4 +62,56 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      scaffoldBackgroundColor: const Color(0xFF1E1E1E),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryBrown,
+        primary: primaryBrown,
+        secondary: accentBrown,
+        surface: const Color(0xFF2D2D2D),
+        brightness: Brightness.dark,
+      ),
+      textTheme: GoogleFonts.outfitTextTheme().copyWith(
+        displayLarge: GoogleFonts.outfit(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 28,
+        ),
+        titleLarge: GoogleFonts.outfit(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+          fontSize: 20,
+        ),
+        bodyLarge: GoogleFonts.outfit(
+          color: Colors.white70,
+          fontSize: 16,
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: const Color(0xFF2D2D2D),
+        elevation: 2,
+        shadowColor: Colors.black26,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBrown,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 56),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          textStyle: GoogleFonts.outfit(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+      ),
+    );
+  }
 }
