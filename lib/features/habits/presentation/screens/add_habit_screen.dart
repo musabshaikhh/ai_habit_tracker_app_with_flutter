@@ -76,23 +76,16 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
       startDate: DateTime.now(),
     );
 
-    await ref.read(habitsProvider.notifier).addHabit(habit);
-
-    // Get the newly created habit's ID (it will be the last one)
-    final habits = ref.read(habitsProvider);
-    final newHabit = habits.firstWhere(
-      (h) => h.name == habit.name && h.description == habit.description,
-    );
+    // Add habit and get the ID
+    final habitId = await ref.read(habitsProvider.notifier).addHabit(habit);
 
     // Schedule notification for the habit
-    if (newHabit.id != null) {
-      await NotificationService.instance.scheduleHabitReminder(
-        habitId: newHabit.id!,
-        habitName: newHabit.name,
-        time: _reminderTime,
-        frequency: newHabit.frequency,
-      );
-    }
+    await NotificationService.instance.scheduleHabitReminder(
+      habitId: habitId,
+      habitName: habit.name,
+      time: _reminderTime,
+      frequency: habit.frequency,
+    );
 
     if (mounted) {
       Navigator.pop(context);

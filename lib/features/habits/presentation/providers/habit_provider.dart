@@ -30,9 +30,10 @@ class HabitNotifier extends StateNotifier<List<Habit>> {
     state = await _repository.getHabits();
   }
 
-  Future<void> addHabit(Habit habit) async {
-    await _repository.addHabit(habit);
+  Future<int> addHabit(Habit habit) async {
+    final id = await _repository.addHabit(habit);
     await loadHabits();
+    return id;
   }
 
   Future<void> updateHabit(Habit habit) async {

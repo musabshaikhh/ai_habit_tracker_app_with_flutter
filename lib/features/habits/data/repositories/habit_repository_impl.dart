@@ -10,8 +10,8 @@ class HabitRepositoryImpl {
     return await _dbHelper.getAllHabits();
   }
 
-  Future<void> addHabit(Habit habit) async {
-    await _dbHelper.insertHabit(habit);
+  Future<int> addHabit(Habit habit) async {
+    return await _dbHelper.insertHabit(habit);
   }
 
   Future<void> updateHabit(Habit habit) async {
