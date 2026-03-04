@@ -1,4 +1,4 @@
-// ignore_for_file: unused_field
+// ignore_for_file: avoid_print, unused_field
 
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
