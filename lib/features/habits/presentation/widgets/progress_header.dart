@@ -2,14 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
 
 class ProgressHeader extends StatelessWidget {
-  const ProgressHeader({super.key});
+  final int completed;
+  final int total;
+
+  const ProgressHeader({
+    super.key,
+    required this.completed,
+    required this.total,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final progress = total > 0 ? completed / total : 0.0;
+    final percentage = (progress * 100).round();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.primaryBrown,
+        gradient: const LinearGradient(
+          colors: [AppTheme.primaryBrown, AppTheme.accentBrown],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -34,9 +48,15 @@ class ProgressHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Great job! You\'ve completed 3/5 habits today.',
-                  style: TextStyle(
+                Text(
+                  total == 0
+                      ? 'No habits yet. Start your journey!'
+                      : completed == total
+                          ? 'Amazing! All habits completed! 🎉'
+                          : completed > 0
+                              ? 'Great progress! $completed/$total done today.'
+                              : 'Start your day with a habit!',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -45,10 +65,10 @@ class ProgressHeader extends StatelessWidget {
                 const SizedBox(height: 16),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: const LinearProgressIndicator(
-                    value: 0.6,
+                  child: LinearProgressIndicator(
+                    value: progress,
                     backgroundColor: Colors.white24,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                     minHeight: 8,
                   ),
                 ),
@@ -56,22 +76,22 @@ class ProgressHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 24),
-          const Stack(
+          Stack(
             alignment: Alignment.center,
             children: [
               SizedBox(
                 width: 70,
                 height: 70,
                 child: CircularProgressIndicator(
-                  value: 0.6,
+                  value: progress,
                   strokeWidth: 8,
                   backgroundColor: Colors.white24,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
               Text(
-                '60%',
-                style: TextStyle(
+                total > 0 ? '$percentage%' : '0%',
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,

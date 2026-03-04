@@ -1,12 +1,99 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
+import 'package:ai_habit_tracker_app/features/habits/presentation/providers/habit_provider.dart';
+import 'package:ai_habit_tracker_app/core/database/database_helper.dart';
+import 'package:ai_habit_tracker_app/features/habits/domain/models/habit.dart';
 
-class StatisticsScreen extends StatelessWidget {
+class StatisticsScreen extends ConsumerStatefulWidget {
   const StatisticsScreen({super.key});
 
   @override
+  ConsumerState<StatisticsScreen> createState() => _StatisticsScreenState();
+}
+
+class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
+  Map<int, int> _weeklyData = {};
+  List<double> _monthlyData = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    setState(() => _isLoading = true);
+    try {
+      await _loadWeeklyData();
+      await _loadMonthlyData();
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadWeeklyData() async {
+    final habits = ref.read(habitsProvider);
+    final weekData = <int, int>{};
+
+    for (int i = 0; i < 7; i++) {
+      weekData[i] = 0;
+    }
+
+    final today = DateTime.now();
+    for (int i = 0; i < 7; i++) {
+      final date = today.subtract(Duration(days: 6 - i));
+      final dateStr = date.toIso8601String().split('T')[0];
+
+      for (final habit in habits) {
+        if (habit.id != null) {
+          final history = await DatabaseHelper.instance.getHistoryForHabit(habit.id!);
+          final completed = history.any((h) =>
+              h.date.toIso8601String().split('T')[0] == dateStr && h.completed);
+          if (completed) {
+            weekData[i] = (weekData[i] ?? 0) + 1;
+          }
+        }
+      }
+    }
+
+    setState(() => _weeklyData = weekData);
+  }
+
+  Future<void> _loadMonthlyData() async {
+    final habits = ref.read(habitsProvider);
+    final monthData = <double>[];
+
+    final today = DateTime.now();
+    for (int i = 29; i >= 0; i--) {
+      final date = today.subtract(Duration(days: i));
+      int completedCount = 0;
+
+      for (final habit in habits) {
+        if (habit.id != null) {
+          final history = await DatabaseHelper.instance.getHistoryForHabit(habit.id!);
+          final completed = history.any((h) =>
+              h.date.year == date.year &&
+              h.date.month == date.month &&
+              h.date.day == date.day &&
+              h.completed);
+          if (completed) completedCount++;
+        }
+      }
+
+      final rate = habits.isEmpty ? 0.0 : completedCount / habits.length;
+      monthData.add(rate * 10);
+    }
+
+    setState(() => _monthlyData = monthData);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final habits = ref.watch(habitsProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -17,44 +104,127 @@ class StatisticsScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatCard(
-              context,
-              'Weekly Completion',
-              'You completed 85% of your habits this week!',
-              _buildBarChart(),
-            ),
-            const SizedBox(height: 24),
-            _buildStatCard(
-              context,
-              'Consistency Trend',
-              'Your daily completion rate over the last 30 days.',
-              _buildLineChart(),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildMiniStat(
-                    'Best Streak',
-                    '12 Days',
-                    Colors.orange,
-                  ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadStats,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildStatCard(
+                      context,
+                      'Weekly Completion',
+                      'You completed ${_calculateWeeklyPercentage(habits.length)}% of your habits this week!',
+                      _buildBarChart(habits.length),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildStatCard(
+                      context,
+                      'Consistency Trend',
+                      'Your daily completion rate over the last 30 days.',
+                      _buildLineChart(),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMiniStat(
+                            _getBestStreak(habits),
+                            'Best Streak',
+                            Colors.orange,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildMiniStat(
+                            _getTotalCompletions(habits).toString(),
+                            'Finished',
+                            AppTheme.successGreen,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Weekly Summary
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Weekly Summary',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontSize: 18,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildSummaryRow(
+                            Icons.check_circle,
+                            'Habits Completed',
+                            _getTotalThisWeek().toString(),
+                            AppTheme.successGreen,
+                          ),
+                          const Divider(),
+                          _buildSummaryRow(
+                            Icons.local_fire_department,
+                            'Streaks Maintained',
+                            _getActiveStreaks(habits).toString(),
+                            Colors.orange,
+                          ),
+                          const Divider(),
+                          _buildSummaryRow(
+                            Icons.trending_up,
+                            'Completion Rate',
+                            '${_calculateWeeklyPercentage(habits.length)}%',
+                            AppTheme.primaryBrown,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildMiniStat('Finished', '48 Items', Colors.green),
-                ),
-              ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
+  }
+
+  int _getTotalThisWeek() {
+    return _weeklyData.values.fold(0, (sum, val) => sum + val);
+  }
+
+  int _getActiveStreaks(List<Habit> habits) {
+    return habits.where((h) => h.currentStreak > 0).length;
+  }
+
+  int _calculateWeeklyPercentage(int totalHabits) {
+    if (totalHabits == 0) return 0;
+    final totalCompleted = _getTotalThisWeek();
+    final maxPossible = totalHabits * 7;
+    if (maxPossible == 0) return 0;
+    return ((totalCompleted / maxPossible) * 100).round();
+  }
+
+  int _getBestStreak(List<Habit> habits) {
+    if (habits.isEmpty) return 0;
+    return habits.fold(0, (max, h) => h.longestStreak > max ? h.longestStreak : max);
+  }
+
+  int _getTotalCompletions(List<Habit> habits) {
+    return habits.fold(0, (sum, h) => sum + h.totalCompletions);
   }
 
   Widget _buildStatCard(
@@ -81,16 +251,12 @@ class StatisticsScreen extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontSize: 18),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
           ),
           const SizedBox(height: 24),
           SizedBox(height: 200, child: chart),
@@ -99,7 +265,7 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMiniStat(String label, String value, Color color) {
+  Widget _buildMiniStat(String value, String label, Color color) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -131,11 +297,39 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBarChart() {
+  Widget _buildSummaryRow(IconData icon, String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarChart(int totalHabits) {
+    final maxY = (totalHabits > 0 ? totalHabits : 10).toDouble();
+    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 10,
+        maxY: maxY,
         barTouchData: BarTouchData(enabled: false),
         titlesData: FlTitlesData(
           show: true,
@@ -143,11 +337,14 @@ class StatisticsScreen extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-                return Text(
-                  days[value.toInt() % 7],
-                  style: const TextStyle(fontSize: 10),
-                );
+                final index = value.toInt();
+                if (index >= 0 && index < weekdays.length) {
+                  return Text(
+                    weekdays[index],
+                    style: const TextStyle(fontSize: 10),
+                  );
+                }
+                return const Text('');
               },
             ),
           ),
@@ -163,30 +360,21 @@ class StatisticsScreen extends StatelessWidget {
         ),
         gridData: const FlGridData(show: false),
         borderData: FlBorderData(show: false),
-        barGroups: [
-          _group(0, 8),
-          _group(1, 6),
-          _group(2, 9),
-          _group(3, 7),
-          _group(4, 5),
-          _group(5, 8),
-          _group(6, 10),
-        ],
+        barGroups: List.generate(7, (index) {
+          final value = (_weeklyData[index] ?? 0).toDouble();
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: value,
+                color: AppTheme.primaryBrown,
+                width: 12,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
+          );
+        }),
       ),
-    );
-  }
-
-  BarChartGroupData _group(int x, double y) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y,
-          color: AppTheme.primaryBrown,
-          width: 12,
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ],
     );
   }
 
@@ -198,15 +386,9 @@ class StatisticsScreen extends StatelessWidget {
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: [
-              const FlSpot(0, 3),
-              const FlSpot(2, 4),
-              const FlSpot(4, 3.5),
-              const FlSpot(6, 5),
-              const FlSpot(8, 4),
-              const FlSpot(10, 6),
-              const FlSpot(12, 5.5),
-            ],
+            spots: _monthlyData.asMap().entries.map((e) {
+              return FlSpot(e.key.toDouble(), e.value);
+            }).toList(),
             isCurved: true,
             color: AppTheme.primaryBrown,
             barWidth: 4,
@@ -218,6 +400,8 @@ class StatisticsScreen extends StatelessWidget {
             ),
           ),
         ],
+        minY: 0,
+        maxY: 10,
       ),
     );
   }
