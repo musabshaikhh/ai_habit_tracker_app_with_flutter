@@ -49,7 +49,7 @@ class _AISuggestionsScreenState extends ConsumerState<AISuggestionsScreen> {
     }
   }
 
-  void _addHabit(Map<String, String> suggestion) {
+  void _addHabit(Map<String, String> suggestion) async {
     final habit = Habit(
       name: suggestion['name']!,
       description: suggestion['explanation']!,
@@ -60,22 +60,25 @@ class _AISuggestionsScreenState extends ConsumerState<AISuggestionsScreen> {
       startDate: DateTime.now(),
     );
 
-    ref.read(habitsProvider.notifier).addHabit(habit);
+    // Add habit and get the ID
+    final habitId = await ref.read(habitsProvider.notifier).addHabit(habit);
 
-    // Schedule notification
+    // Schedule notification with the returned ID
     NotificationService.instance.scheduleHabitReminder(
-      habitId: habit.id ?? DateTime.now().millisecondsSinceEpoch,
+      habitId: habitId,
       habitName: habit.name,
       time: const TimeOfDay(hour: 8, minute: 0),
       frequency: habit.frequency,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${suggestion['name']} added to your habits!'),
-        backgroundColor: AppTheme.successGreen,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${suggestion['name']} added to your habits!'),
+          backgroundColor: AppTheme.successGreen,
+        ),
+      );
+    }
   }
 
   String _getIconForHabit(String habitName) {

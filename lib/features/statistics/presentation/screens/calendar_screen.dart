@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
 import 'package:ai_habit_tracker_app/core/database/database_helper.dart';
+import 'package:ai_habit_tracker_app/features/habits/domain/models/habit.dart';
 import 'package:ai_habit_tracker_app/features/habits/presentation/providers/habit_provider.dart';
 import 'package:intl/intl.dart';
 

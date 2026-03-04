@@ -239,25 +239,23 @@ class SettingsScreen extends ConsumerWidget {
             onPressed: () async {
               // Cancel all notifications
               await NotificationService.instance.cancelAllReminders();
-              
-              // Clear database
-              await DatabaseHelper.instance.close();
-              final dbPath = await DatabaseHelper.instance.database;
-              // Note: In a real app, you'd properly clear the database tables
-              
+
+              // Clear database tables
+              await DatabaseHelper.instance.clearAll();
+
               // Reset providers
               ref.read(xpProvider.notifier).resetXP();
               ref.read(settingsProvider.notifier).clearAllData();
               ref.read(habitsProvider.notifier).loadHabits();
-              
-              Navigator.pop(context);
-              Navigator.pop(context);
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('All data has been reset'),
-                ),
-              );
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('All data has been reset'),
+                  ),
+                );
+              }
             },
             style: TextButton.styleFrom(foregroundColor: AppTheme.missedRed),
             child: const Text('Reset'),

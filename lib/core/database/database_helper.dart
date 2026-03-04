@@ -127,6 +127,12 @@ CREATE TABLE habit_history (
     );
   }
 
+  Future<void> clearAll() async {
+    final db = await instance.database;
+    await db.delete('habit_history');
+    await db.delete('habits');
+  }
+
   Future close() async {
     final db = await instance.database;
     db.close();
