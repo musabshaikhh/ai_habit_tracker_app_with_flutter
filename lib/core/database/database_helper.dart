@@ -117,6 +117,16 @@ CREATE TABLE habit_history (
     return result.map((json) => HabitHistory.fromMap(json)).toList();
   }
 
+  Future<int> deleteHistory(int habitId, DateTime date) async {
+    final db = await instance.database;
+    final dateStr = date.toIso8601String().split('T')[0];
+    return await db.delete(
+      'habit_history',
+      where: 'habitId = ? AND date = ?',
+      whereArgs: [habitId, dateStr],
+    );
+  }
+
   Future close() async {
     final db = await instance.database;
     db.close();

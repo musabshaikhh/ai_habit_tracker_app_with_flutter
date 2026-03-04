@@ -1,12 +1,96 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
+import 'package:ai_habit_tracker_app/core/database/database_helper.dart';
+import 'package:ai_habit_tracker_app/features/habits/domain/models/habit.dart';
+import 'package:ai_habit_tracker_app/features/habits/presentation/providers/habit_provider.dart';
 
-class StatisticsScreen extends StatelessWidget {
+class StatisticsScreen extends ConsumerWidget {
   const StatisticsScreen({super.key});
 
+  Future<List<HabitHistory>> _getLast7DaysHistory() async {
+    final db = DatabaseHelper.instance;
+    final history = <HabitHistory>[];
+    final now = DateTime.now();
+
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dayHistory = await db.getHistoryForDate(date);
+      history.addAll(dayHistory);
+    }
+
+    return history;
+  }
+
+  Future<Map<String, dynamic>> _getWeeklyStats() async {
+    final db = DatabaseHelper.instance;
+    final habits = await db.getAllHabits();
+    final now = DateTime.now();
+
+    List<int> dailyCompletions = List.filled(7, 0);
+    int totalPossible = habits.length * 7;
+    int totalCompleted = 0;
+
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final history = await db.getHistoryForDate(date);
+      final completed = history.where((h) => h.completed).length;
+      dailyCompletions[6 - i] = completed;
+      totalCompleted += completed;
+    }
+
+    final percentage = totalPossible > 0
+        ? (totalCompleted / totalPossible * 100).round()
+        : 0;
+
+    return {
+      'dailyCompletions': dailyCompletions,
+      'percentage': percentage,
+      'totalCompleted': totalCompleted,
+    };
+  }
+
+  Future<List<FlSpot>> _get30DayTrend() async {
+    final db = DatabaseHelper.instance;
+    final habits = await db.getAllHabits();
+    final now = DateTime.now();
+    List<FlSpot> spots = [];
+
+    for (int i = 29; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final history = await db.getHistoryForDate(date);
+      final completed = history.where((h) => h.completed).length;
+      final percentage = habits.isNotEmpty ? completed / habits.length : 0.0;
+      spots.add(FlSpot((29 - i).toDouble(), percentage * 10));
+    }
+
+    return spots;
+  }
+
+  Future<Map<String, dynamic>> _getOverallStats() async {
+    final habits = await DatabaseHelper.instance.getAllHabits();
+
+    int totalCompletions = 0;
+    int bestStreak = 0;
+
+    for (final habit in habits) {
+      totalCompletions += habit.totalCompletions;
+      if (habit.longestStreak > bestStreak) {
+        bestStreak = habit.longestStreak;
+      }
+    }
+
+    return {
+      'bestStreak': bestStreak,
+      'totalCompletions': totalCompletions,
+    };
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final habitsAsync = ref.watch(habitsProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -22,34 +106,76 @@ class StatisticsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildStatCard(
-              context,
-              'Weekly Completion',
-              'You completed 85% of your habits this week!',
-              _buildBarChart(),
+            // Weekly Completion Chart
+            FutureBuilder<Map<String, dynamic>>(
+              future: _getWeeklyStats(),
+              builder: (context, snapshot) {
+                final stats = snapshot.data ?? {
+                  'dailyCompletions': [0, 0, 0, 0, 0, 0, 0],
+                  'percentage': 0,
+                  'totalCompleted': 0,
+                };
+                final dailyCompletions = stats['dailyCompletions'] as List<int>;
+                final percentage = stats['percentage'] as int;
+
+                return _buildStatCard(
+                  context,
+                  'Weekly Completion',
+                  habitsAsync.isEmpty
+                      ? 'Create habits to see your weekly stats!'
+                      : 'You completed $percentage% of your habits this week!',
+                  _buildBarChart(dailyCompletions),
+                );
+              },
             ),
             const SizedBox(height: 24),
-            _buildStatCard(
-              context,
-              'Consistency Trend',
-              'Your daily completion rate over the last 30 days.',
-              _buildLineChart(),
+
+            // Consistency Trend Chart
+            FutureBuilder<List<FlSpot>>(
+              future: _get30DayTrend(),
+              builder: (context, snapshot) {
+                final spots = snapshot.data ?? [];
+                return _buildStatCard(
+                  context,
+                  'Consistency Trend',
+                  'Your daily completion rate over the last 30 days.',
+                  _buildLineChart(spots),
+                );
+              },
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildMiniStat(
-                    'Best Streak',
-                    '12 Days',
-                    Colors.orange,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildMiniStat('Finished', '48 Items', Colors.green),
-                ),
-              ],
+
+            // Mini Stats
+            FutureBuilder<Map<String, dynamic>>(
+              future: _getOverallStats(),
+              builder: (context, snapshot) {
+                final stats = snapshot.data ?? {
+                  'bestStreak': 0,
+                  'totalCompletions': 0,
+                };
+                final bestStreak = stats['bestStreak'] as int;
+                final totalCompletions = stats['totalCompletions'] as int;
+
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildMiniStat(
+                        'Best Streak',
+                        '$bestStreak Days',
+                        Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildMiniStat(
+                        'Total Completions',
+                        totalCompletions.toString(),
+                        AppTheme.successGreen,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -131,11 +257,15 @@ class StatisticsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBarChart() {
+  Widget _buildBarChart(List<int> dailyCompletions) {
+    final maxY = dailyCompletions.isEmpty
+        ? 10.0
+        : (dailyCompletions.reduce((a, b) => a > b ? a : b) + 1).toDouble();
+
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 10,
+        maxY: maxY > 0 ? maxY : 10,
         barTouchData: BarTouchData(enabled: false),
         titlesData: FlTitlesData(
           show: true,
@@ -144,10 +274,14 @@ class StatisticsScreen extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-                return Text(
-                  days[value.toInt() % 7],
-                  style: const TextStyle(fontSize: 10),
-                );
+                final index = value.toInt();
+                if (index >= 0 && index < 7) {
+                  return Text(
+                    days[index],
+                    style: const TextStyle(fontSize: 10),
+                  );
+                }
+                return const Text('');
               },
             ),
           ),
@@ -163,34 +297,24 @@ class StatisticsScreen extends StatelessWidget {
         ),
         gridData: const FlGridData(show: false),
         borderData: FlBorderData(show: false),
-        barGroups: [
-          _group(0, 8),
-          _group(1, 6),
-          _group(2, 9),
-          _group(3, 7),
-          _group(4, 5),
-          _group(5, 8),
-          _group(6, 10),
-        ],
+        barGroups: dailyCompletions.asMap().entries.map((entry) {
+          return BarChartGroupData(
+            x: entry.key,
+            barRods: [
+              BarChartRodData(
+                toY: entry.value.toDouble(),
+                color: AppTheme.primaryBrown,
+                width: 12,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
 
-  BarChartGroupData _group(int x, double y) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y,
-          color: AppTheme.primaryBrown,
-          width: 12,
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLineChart() {
+  Widget _buildLineChart(List<FlSpot> spots) {
     return LineChart(
       LineChartData(
         gridData: const FlGridData(show: false),
@@ -198,15 +322,9 @@ class StatisticsScreen extends StatelessWidget {
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: [
-              const FlSpot(0, 3),
-              const FlSpot(2, 4),
-              const FlSpot(4, 3.5),
-              const FlSpot(6, 5),
-              const FlSpot(8, 4),
-              const FlSpot(10, 6),
-              const FlSpot(12, 5.5),
-            ],
+            spots: spots.isEmpty
+                ? [const FlSpot(0, 0)]
+                : spots,
             isCurved: true,
             color: AppTheme.primaryBrown,
             barWidth: 4,

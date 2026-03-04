@@ -1,5 +1,5 @@
 import 'package:ai_habit_tracker_app/core/database/database_helper.dart';
-import 'package:ai_habit_tracker_app/features/habits/domain/models/habit.dart';
+import '../../domain/models/habit.dart';
 
 class HabitRepositoryImpl {
   final DatabaseHelper _dbHelper;
@@ -49,13 +49,7 @@ class HabitRepositoryImpl {
   }
 
   Future<void> deleteHistory(int habitId, DateTime date) async {
-    final db = await _dbHelper.database;
-    final dateStr = date.toIso8601String().split('T')[0];
-    await db.delete(
-      'habit_history',
-      where: 'habitId = ? AND date = ?',
-      whereArgs: [habitId, dateStr],
-    );
+    await _dbHelper.deleteHistory(habitId, date);
 
     // Rollback streak
     final habits = await _dbHelper.getAllHabits();
