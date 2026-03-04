@@ -5,6 +5,7 @@ import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
 import 'package:ai_habit_tracker_app/core/notifications/notification_service.dart';
 import 'package:ai_habit_tracker_app/features/habits/domain/models/habit.dart';
 import 'package:ai_habit_tracker_app/features/habits/presentation/providers/habit_provider.dart';
+import 'package:ai_habit_tracker_app/features/habits/presentation/providers/settings_provider.dart';
 
 class AddHabitScreen extends ConsumerStatefulWidget {
   const AddHabitScreen({super.key});
@@ -79,13 +80,15 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
     // Add habit and get the ID
     final habitId = await ref.read(habitsProvider.notifier).addHabit(habit);
 
-    // Schedule notification for the habit
-    await NotificationService.instance.scheduleHabitReminder(
-      habitId: habitId,
-      habitName: habit.name,
-      time: _reminderTime,
-      frequency: habit.frequency,
-    );
+    // Schedule notification with the correct ID if notifications are enabled
+    if (ref.read(settingsProvider).notificationsEnabled) {
+      await NotificationService.instance.scheduleHabitReminder(
+        habitId: habitId,
+        habitName: habit.name,
+        time: _reminderTime,
+        frequency: habit.frequency,
+      );
+    }
 
     if (mounted) {
       Navigator.pop(context);

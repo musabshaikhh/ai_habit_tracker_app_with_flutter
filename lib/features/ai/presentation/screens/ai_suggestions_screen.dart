@@ -5,6 +5,7 @@ import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
 import 'package:ai_habit_tracker_app/features/ai/services/ai_service.dart';
 import 'package:ai_habit_tracker_app/features/habits/domain/models/habit.dart';
 import 'package:ai_habit_tracker_app/features/habits/presentation/providers/habit_provider.dart';
+import 'package:ai_habit_tracker_app/features/habits/presentation/providers/settings_provider.dart';
 import 'package:ai_habit_tracker_app/core/notifications/notification_service.dart';
 
 final aiSuggestionsProvider = FutureProvider.family<
@@ -63,13 +64,15 @@ class _AISuggestionsScreenState extends ConsumerState<AISuggestionsScreen> {
     // Add habit and get the ID
     final habitId = await ref.read(habitsProvider.notifier).addHabit(habit);
 
-    // Schedule notification with the returned ID
-    NotificationService.instance.scheduleHabitReminder(
-      habitId: habitId,
-      habitName: habit.name,
-      time: const TimeOfDay(hour: 8, minute: 0),
-      frequency: habit.frequency,
-    );
+    // Schedule notification with the correct ID if notifications are enabled
+    if (ref.read(settingsProvider).notificationsEnabled) {
+      await NotificationService.instance.scheduleHabitReminder(
+        habitId: habitId,
+        habitName: habit.name,
+        time: const TimeOfDay(hour: 8, minute: 0),
+        frequency: habit.frequency,
+      );
+    }
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
