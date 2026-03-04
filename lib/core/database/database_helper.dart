@@ -1,3 +1,5 @@
+// ignore_for_file: unused_field
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../../features/habits/domain/models/habit.dart';
@@ -192,9 +194,10 @@ CREATE TABLE habit_history (
   }
 
   Future<List<HabitHistory>> getHistoryForDate(DateTime date) async {
+    final dateStr =
+        date.toIso8601String().split('T')[0]; // <-- Move outside try block
     try {
       final db = await instance.database;
-      final dateStr = date.toIso8601String().split('T')[0];
       final result = await db.query(
         'habit_history',
         where: 'date = ?',
@@ -203,7 +206,7 @@ CREATE TABLE habit_history (
       return result.map((json) => HabitHistory.fromMap(json)).toList();
     } catch (e) {
       if (kDebugMode) {
-        print('Error fetching history for date $dateStr: $e');
+        print('Error fetching history for date $dateStr: $e'); // Now accessible
       }
       rethrow;
     }
