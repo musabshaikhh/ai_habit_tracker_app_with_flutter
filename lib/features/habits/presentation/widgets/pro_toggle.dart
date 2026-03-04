@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
-
-final proVersionProvider = StateProvider<bool>((ref) => false);
+import '../providers/settings_provider.dart';
 
 class ProVersionToggle extends ConsumerWidget {
   const ProVersionToggle({super.key});
@@ -27,7 +26,7 @@ class ProVersionToggle extends ConsumerWidget {
         value: isPro,
         activeThumbColor: AppTheme.primaryBrown,
         onChanged: (value) {
-          ref.read(proVersionProvider.notifier).state = value;
+          ref.read(settingsProvider.notifier).setProVersionEnabled(value);
         },
       ),
     );

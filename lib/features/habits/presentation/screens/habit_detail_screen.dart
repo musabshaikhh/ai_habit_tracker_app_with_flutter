@@ -6,20 +6,22 @@ import 'package:ai_habit_tracker_app/core/notifications/notification_service.dar
 import 'package:ai_habit_tracker_app/features/habits/domain/models/habit.dart';
 import 'package:ai_habit_tracker_app/features/habits/presentation/providers/habit_provider.dart';
 
-class AddHabitScreen extends ConsumerStatefulWidget {
-  const AddHabitScreen({super.key});
+class HabitDetailScreen extends ConsumerStatefulWidget {
+  final Habit habit;
+
+  const HabitDetailScreen({super.key, required this.habit});
 
   @override
-  ConsumerState<AddHabitScreen> createState() => _AddHabitScreenState();
+  ConsumerState<HabitDetailScreen> createState() => _HabitDetailScreenState();
 }
 
-class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
-  final _nameController = TextEditingController();
-  final _descController = TextEditingController();
-  String _selectedIcon = 'book';
-  int _selectedColor = 0xFF8D6E63;
-  String _frequency = 'daily';
-  TimeOfDay _reminderTime = const TimeOfDay(hour: 8, minute: 0);
+class _HabitDetailScreenState extends ConsumerState<HabitDetailScreen> {
+  late TextEditingController _nameController;
+  late TextEditingController _descController;
+  late String _selectedIcon;
+  late int _selectedColor;
+  late String _frequency;
+  late TimeOfDay _reminderTime;
 
   final List<Map<String, dynamic>> _icons = [
     {'name': 'book', 'icon': FontAwesomeIcons.bookOpen},
@@ -44,6 +46,23 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.habit.name);
+    _descController = TextEditingController(text: widget.habit.description);
+    _selectedIcon = widget.habit.icon;
+    _selectedColor = widget.habit.color;
+    _frequency = widget.habit.frequency;
+    
+    // Parse reminder time
+    final timeParts = widget.habit.reminderTime.split(':');
+    _reminderTime = TimeOfDay(
+      hour: int.parse(timeParts[0]),
+      minute: int.parse(timeParts[1]),
+    );
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _descController.dispose();
@@ -62,10 +81,10 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
     }
   }
 
-  Future<void> _saveHabit() async {
+  void _updateHabit() {
     if (_nameController.text.isEmpty) return;
 
-    final habit = Habit(
+    final updatedHabit = widget.habit.copyWith(
       name: _nameController.text,
       description: _descController.text,
       icon: _selectedIcon,
@@ -73,30 +92,45 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
       frequency: _frequency,
       reminderTime:
           '${_reminderTime.hour}:${_reminderTime.minute.toString().padLeft(2, '0')}',
-      startDate: DateTime.now(),
     );
 
-    await ref.read(habitsProvider.notifier).addHabit(habit);
-
-    // Get the newly created habit's ID (it will be the last one)
-    final habits = ref.read(habitsProvider);
-    final newHabit = habits.firstWhere(
-      (h) => h.name == habit.name && h.description == habit.description,
+    ref.read(habitsProvider.notifier).updateHabit(updatedHabit);
+    
+    // Schedule notification with new time
+    NotificationService.instance.scheduleHabitReminder(
+      habitId: updatedHabit.id!,
+      habitName: updatedHabit.name,
+      time: _reminderTime,
+      frequency: updatedHabit.frequency,
     );
 
-    // Schedule notification for the habit
-    if (newHabit.id != null) {
-      await NotificationService.instance.scheduleHabitReminder(
-        habitId: newHabit.id!,
-        habitName: newHabit.name,
-        time: _reminderTime,
-        frequency: newHabit.frequency,
-      );
-    }
+    Navigator.pop(context);
+  }
 
-    if (mounted) {
-      Navigator.pop(context);
-    }
+  void _deleteHabit() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Habit'),
+        content: Text('Are you sure you want to delete "${widget.habit.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(habitsProvider.notifier).deleteHabit(widget.habit.id!);
+              NotificationService.instance.cancelHabitReminder(widget.habit.id!);
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.missedRed),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -104,18 +138,29 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Create Habit',
+          'Edit Habit',
           style: Theme.of(context).textTheme.titleLarge,
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: _deleteHabit,
+            icon: const Icon(Icons.delete_outline, color: AppTheme.missedRed),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Habit Stats Card
+            _buildStatsCard(),
+            const SizedBox(height: 24),
+            
+            // Habit Info
             _buildTextField(
               'Habit Name',
               _nameController,
@@ -128,7 +173,9 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
               'Why is this habit important?',
             ),
             const SizedBox(height: 32),
-            Text('Icon & Color', style: Theme.of(context).textTheme.titleLarge),
+            
+            // Icon Selection
+            Text('Icon', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             Wrap(
               spacing: 12,
@@ -140,8 +187,7 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color:
-                          isSelected ? AppTheme.primaryBrown : Colors.white,
+                      color: isSelected ? AppTheme.primaryBrown : Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: AppTheme.primaryBrown.withValues(alpha: 0.2),
@@ -149,14 +195,17 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
                     ),
                     child: Icon(
                       item['icon'],
-                      color:
-                          isSelected ? Colors.white : AppTheme.primaryBrown,
+                      color: isSelected ? Colors.white : AppTheme.primaryBrown,
                       size: 20,
                     ),
                   ),
                 );
               }).toList(),
             ),
+            const SizedBox(height: 32),
+            
+            // Color Selection
+            Text('Color', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
             Wrap(
               spacing: 12,
@@ -179,17 +228,82 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
               }).toList(),
             ),
             const SizedBox(height: 32),
+            
+            // Frequency Toggle
             _buildFrequencyToggle(),
             const SizedBox(height: 32),
+            
+            // Reminder Time
             _buildReminderTimePicker(),
             const SizedBox(height: 40),
+            
+            // Update Button
             ElevatedButton(
-              onPressed: _saveHabit,
-              child: const Text('Save Habit'),
+              onPressed: _updateHabit,
+              child: const Text('Update Habit'),
+            ),
+            const SizedBox(height: 16),
+            
+            // Delete Button
+            OutlinedButton(
+              onPressed: _deleteHabit,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.missedRed,
+                minimumSize: const Size(double.infinity, 56),
+                side: const BorderSide(color: AppTheme.missedRed),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text('Delete Habit'),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatsCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryBrown.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.primaryBrown.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem('Current Streak', '🔥 ${widget.habit.currentStreak}'),
+          _buildStatItem('Longest Streak', '⭐ ${widget.habit.longestStreak}'),
+          _buildStatItem('Total Done', '✓ ${widget.habit.totalCompletions}'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.primaryBrown,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: AppTheme.textDark.withValues(alpha: 0.6),
+          ),
+        ),
+      ],
     );
   }
 

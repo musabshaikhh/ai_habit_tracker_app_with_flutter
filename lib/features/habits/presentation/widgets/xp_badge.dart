@@ -1,17 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
-
-final xpProvider = StateProvider<int>((ref) => 1250); // Mock starting XP
-
-class GamificationService {
-  static int getLevel(int totalXP) => (totalXP / 1000).floor() + 1;
-  static double getProgressToNextLevel(int totalXP) => (totalXP % 1000) / 1000;
-
-  static int xpForHabit(String frequency) {
-    return frequency == 'daily' ? 50 : 200;
-  }
-}
+import '../providers/xp_provider.dart';
 
 class XPBadge extends ConsumerWidget {
   const XPBadge({super.key});
