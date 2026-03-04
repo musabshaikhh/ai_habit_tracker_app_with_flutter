@@ -6,6 +6,7 @@ import 'package:ai_habit_tracker_app/core/notifications/notification_service.dar
 import 'package:ai_habit_tracker_app/features/habits/domain/models/habit.dart';
 import 'package:ai_habit_tracker_app/features/habits/presentation/providers/habit_provider.dart';
 import 'package:ai_habit_tracker_app/features/habits/presentation/providers/settings_provider.dart';
+import 'package:flutter/foundation.dart';
 
 class AddHabitScreen extends ConsumerStatefulWidget {
   const AddHabitScreen({super.key});
@@ -21,6 +22,7 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
   int _selectedColor = 0xFF8D6E63;
   String _frequency = 'daily';
   TimeOfDay _reminderTime = const TimeOfDay(hour: 8, minute: 0);
+  bool _isSaving = false;
 
   final List<Map<String, dynamic>> _icons = [
     {'name': 'book', 'icon': FontAwesomeIcons.bookOpen},
@@ -63,35 +65,87 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
     }
   }
 
-  Future<void> _saveHabit() async {
-    if (_nameController.text.isEmpty) return;
-
-    final habit = Habit(
-      name: _nameController.text,
-      description: _descController.text,
-      icon: _selectedIcon,
-      color: _selectedColor,
-      frequency: _frequency,
-      reminderTime:
-          '${_reminderTime.hour}:${_reminderTime.minute.toString().padLeft(2, '0')}',
-      startDate: DateTime.now(),
-    );
-
-    // Add habit and get the ID
-    final habitId = await ref.read(habitsProvider.notifier).addHabit(habit);
-
-    // Schedule notification with the correct ID if notifications are enabled
-    if (ref.read(settingsProvider).notificationsEnabled) {
-      await NotificationService.instance.scheduleHabitReminder(
-        habitId: habitId,
-        habitName: habit.name,
-        time: _reminderTime,
-        frequency: habit.frequency,
+  void _saveHabit() async {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a habit name')),
       );
+      return;
     }
 
-    if (mounted) {
-      Navigator.pop(context);
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      if (kDebugMode) {
+        print('AddHabitScreen: Saving habit ${_nameController.text}');
+      }
+
+      final habit = Habit(
+        name: _nameController.text,
+        description: _descController.text,
+        icon: _selectedIcon,
+        color: _selectedColor,
+        frequency: _frequency,
+        reminderTime:
+            '${_reminderTime.hour}:${_reminderTime.minute.toString().padLeft(2, '0')}',
+        startDate: DateTime.now(),
+      );
+
+      final habitId = await ref.read(habitsProvider.notifier).addHabit(habit);
+      
+      if (kDebugMode) {
+        print('AddHabitScreen: Habit saved with ID $habitId');
+      }
+
+      // Schedule notification if enabled
+      final settings = ref.read(settingsProvider);
+      if (settings.notificationsEnabled) {
+        try {
+          await NotificationService.instance.scheduleHabitReminder(
+            habitId: habitId,
+            habitName: habit.name,
+            time: _reminderTime,
+            frequency: habit.frequency,
+          );
+          if (kDebugMode) {
+            print('AddHabitScreen: Notification scheduled for habit $habitId');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('AddHabitScreen: Error scheduling notification: $e');
+          }
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Habit created successfully!'),
+            backgroundColor: AppTheme.successGreen,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('AddHabitScreen: Error saving habit: $e');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving habit: $e'),
+            backgroundColor: AppTheme.missedRed,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
@@ -180,8 +234,17 @@ class _AddHabitScreenState extends ConsumerState<AddHabitScreen> {
             _buildReminderTimePicker(),
             const SizedBox(height: 40),
             ElevatedButton(
-              onPressed: _saveHabit,
-              child: const Text('Save Habit'),
+              onPressed: _isSaving ? null : _saveHabit,
+              child: _isSaving 
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text('Save Habit'),
             ),
           ],
         ),
