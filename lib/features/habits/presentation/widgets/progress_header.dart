@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
@@ -9,11 +11,12 @@ class ProgressHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsAsync = ref.watch(habitsProvider);
-    
+
     return FutureBuilder<Map<String, dynamic>>(
       future: ref.read(habitsProvider.notifier).getTodayStats(),
       builder: (context, snapshot) {
-        final stats = snapshot.data ?? {'total': 0, 'completed': 0, 'percentage': 0.0};
+        final stats =
+            snapshot.data ?? {'total': 0, 'completed': 0, 'percentage': 0.0};
         final total = stats['total'] as int;
         final completed = stats['completed'] as int;
         final percentage = stats['percentage'] as double;
@@ -25,11 +28,14 @@ class ProgressHeader extends ConsumerWidget {
         } else if (percentage == 1.0) {
           message = 'Amazing! You\'ve completed all $total habits today!';
         } else if (percentage >= 0.7) {
-          message = 'Great job! You\'ve completed $completed/$total habits today.';
+          message =
+              'Great job! You\'ve completed $completed/$total habits today.';
         } else if (percentage >= 0.3) {
-          message = 'Keep going! You\'ve completed $completed/$total habits today.';
+          message =
+              'Keep going! You\'ve completed $completed/$total habits today.';
         } else {
-          message = 'Let\'s start! You\'ve completed $completed/$total habits today.';
+          message =
+              'Let\'s start! You\'ve completed $completed/$total habits today.';
         }
 
         return Container(
@@ -74,7 +80,8 @@ class ProgressHeader extends ConsumerWidget {
                       child: LinearProgressIndicator(
                         value: percentage,
                         backgroundColor: Colors.white24,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(Colors.white),
                         minHeight: 8,
                       ),
                     ),
@@ -92,7 +99,8 @@ class ProgressHeader extends ConsumerWidget {
                       value: percentage,
                       strokeWidth: 8,
                       backgroundColor: Colors.white24,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor:
+                          const AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   ),
                   Text(

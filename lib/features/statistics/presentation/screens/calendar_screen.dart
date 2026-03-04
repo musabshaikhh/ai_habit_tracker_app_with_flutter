@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
@@ -20,7 +22,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final db = DatabaseHelper.instance;
     final habits = await db.getAllHabits();
     final daysInMonth = DateUtils.getDaysInMonth(month.year, month.month);
-    
+
     Map<String, int> completionStatus = {};
 
     for (int day = 1; day <= daysInMonth; day++) {
@@ -195,18 +197,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       itemCount: totalCells,
       itemBuilder: (context, index) {
         final adjustedIndex = index - startOffset;
-        
+
         if (adjustedIndex < 0 || adjustedIndex >= daysInMonth) {
           return const SizedBox.shrink();
         }
 
         final day = adjustedIndex + 1;
         final status = completionStatus[day.toString()] ?? 0;
-        
+
         // 0 = missed, 1 = completed all, 2 = future/no habits, 3 = partial
         Color color;
         bool hasBorder = false;
-        
+
         switch (status) {
           case 1:
             color = AppTheme.successGreen;
@@ -231,7 +233,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
         return Container(
           decoration: BoxDecoration(
-            color: color == Colors.transparent ? null : color.withValues(alpha: 0.2),
+            color: color == Colors.transparent
+                ? null
+                : color.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
             border: isToday
                 ? Border.all(color: AppTheme.primaryBrown, width: 2)
@@ -249,7 +253,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               style: TextStyle(
                 color: status == 1 || status == 0
                     ? color
-                    : AppTheme.textDark.withValues(alpha: status == 2 ? 0.4 : 0.8),
+                    : AppTheme.textDark
+                        .withValues(alpha: status == 2 ? 0.4 : 0.8),
                 fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
                 fontSize: 14,
               ),

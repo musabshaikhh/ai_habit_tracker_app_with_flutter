@@ -1,5 +1,9 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data;
 import 'dart:io' show Platform;
 
 class NotificationService {
@@ -17,6 +21,9 @@ class NotificationService {
   Future<void> init() async {
     if (_isInitialized) return;
 
+    // Initialize timezone data
+    tz_data.initializeTimeZones();
+
     // Android initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -30,7 +37,8 @@ class NotificationService {
     );
 
     // Combined initialization settings
-    final InitializationSettings initializationSettings = InitializationSettings(
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
@@ -65,9 +73,10 @@ class NotificationService {
       final androidPlugin = _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
-      
+
       if (androidPlugin != null) {
-        final notificationEnabled = await androidPlugin.areNotificationsEnabled();
+        final notificationEnabled =
+            await androidPlugin.areNotificationsEnabled();
         return notificationEnabled ?? false;
       }
     }
@@ -83,7 +92,8 @@ class NotificationService {
   }) async {
     await cancelHabitReminder(habitId);
 
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
       'habit_reminders',
       'Habit Reminders',
       channelDescription: 'Reminders for your daily habits',
@@ -115,13 +125,18 @@ class NotificationService {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
+    // Convert DateTime to TZDateTime
+    final tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
+
     await _flutterLocalNotificationsPlugin.zonedSchedule(
       habitId,
       'Time for $habitName!',
       'Stay consistent and complete your habit today.',
-      scheduledDate,
+      tzScheduledDate, // Changed from scheduledDate to tzScheduledDate
       notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime, // Added this
       matchDateTimeComponents: frequency == 'daily'
           ? DateTimeComponents.time
           : DateTimeComponents.dayOfWeekAndTime,
@@ -140,7 +155,8 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
       'immediate_notifications',
       'Immediate Notifications',
       channelDescription: 'Immediate app notifications',

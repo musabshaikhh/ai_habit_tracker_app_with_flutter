@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
@@ -37,21 +39,27 @@ class SettingsScreen extends ConsumerWidget {
             value: settings.notificationsEnabled,
             onChanged: (value) async {
               if (value) {
-                final granted = await NotificationService.instance.requestPermissions();
+                final granted =
+                    await NotificationService.instance.requestPermissions();
                 if (granted) {
-                  ref.read(settingsProvider.notifier).setNotificationsEnabled(true);
+                  ref
+                      .read(settingsProvider.notifier)
+                      .setNotificationsEnabled(true);
                 } else {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Please enable notifications in settings'),
+                        content:
+                            Text('Please enable notifications in settings'),
                       ),
                     );
                   }
                 }
               } else {
                 await NotificationService.instance.cancelAllReminders();
-                ref.read(settingsProvider.notifier).setNotificationsEnabled(false);
+                ref
+                    .read(settingsProvider.notifier)
+                    .setNotificationsEnabled(false);
               }
             },
           ),
@@ -80,7 +88,8 @@ class SettingsScreen extends ConsumerWidget {
                 color: AppTheme.primaryBrown.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.person_outline, color: AppTheme.primaryBrown),
+              child: const Icon(Icons.person_outline,
+                  color: AppTheme.primaryBrown),
             ),
             title: const Text('Display Name'),
             subtitle: Text(settings.username),
@@ -189,7 +198,8 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _showEditNameDialog(BuildContext context, WidgetRef ref, String currentName) {
+  void _showEditNameDialog(
+      BuildContext context, WidgetRef ref, String currentName) {
     final controller = TextEditingController(text: currentName);
     showDialog(
       context: context,
@@ -211,7 +221,9 @@ class SettingsScreen extends ConsumerWidget {
           TextButton(
             onPressed: () {
               if (controller.text.isNotEmpty) {
-                ref.read(settingsProvider.notifier).setUsername(controller.text);
+                ref
+                    .read(settingsProvider.notifier)
+                    .setUsername(controller.text);
               }
               Navigator.pop(context);
             },

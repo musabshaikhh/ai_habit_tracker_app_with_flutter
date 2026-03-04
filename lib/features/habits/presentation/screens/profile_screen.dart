@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_declarations
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ai_habit_tracker_app/core/theme/app_theme.dart';
@@ -114,7 +116,8 @@ class ProfileScreen extends ConsumerWidget {
         const SizedBox(height: 16),
         Text(
           username,
-          style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28),
+          style:
+              Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28),
         ),
         const SizedBox(height: 4),
         Text(
@@ -158,7 +161,10 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               Text(
                 'Level Progress',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontSize: 18),
               ),
               Text(
                 '$xpToNext / $xpNeeded XP',
@@ -175,7 +181,8 @@ class ProfileScreen extends ConsumerWidget {
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: Colors.grey.shade200,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryBrown),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppTheme.primaryBrown),
               minHeight: 12,
             ),
           ),
@@ -273,7 +280,7 @@ class ProfileScreen extends ConsumerWidget {
       _Achievement(
         'First Steps',
         'Create your first habit',
-        Icons.footprint,
+        Icons.directions_walk,
         habits.isNotEmpty,
         Colors.blue,
       ),
@@ -360,7 +367,8 @@ class ProfileScreen extends ConsumerWidget {
         children: [
           Icon(
             achievement.icon,
-            color: achievement.unlocked ? achievement.color : Colors.grey.shade400,
+            color:
+                achievement.unlocked ? achievement.color : Colors.grey.shade400,
             size: 28,
           ),
           const SizedBox(height: 8),

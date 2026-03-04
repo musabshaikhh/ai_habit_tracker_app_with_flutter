@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -40,9 +42,8 @@ class StatisticsScreen extends ConsumerWidget {
       totalCompleted += completed;
     }
 
-    final percentage = totalPossible > 0
-        ? (totalCompleted / totalPossible * 100).round()
-        : 0;
+    final percentage =
+        totalPossible > 0 ? (totalCompleted / totalPossible * 100).round() : 0;
 
     return {
       'dailyCompletions': dailyCompletions,
@@ -110,11 +111,12 @@ class StatisticsScreen extends ConsumerWidget {
             FutureBuilder<Map<String, dynamic>>(
               future: _getWeeklyStats(),
               builder: (context, snapshot) {
-                final stats = snapshot.data ?? {
-                  'dailyCompletions': [0, 0, 0, 0, 0, 0, 0],
-                  'percentage': 0,
-                  'totalCompleted': 0,
-                };
+                final stats = snapshot.data ??
+                    {
+                      'dailyCompletions': [0, 0, 0, 0, 0, 0, 0],
+                      'percentage': 0,
+                      'totalCompleted': 0,
+                    };
                 final dailyCompletions = stats['dailyCompletions'] as List<int>;
                 final percentage = stats['percentage'] as int;
 
@@ -149,10 +151,11 @@ class StatisticsScreen extends ConsumerWidget {
             FutureBuilder<Map<String, dynamic>>(
               future: _getOverallStats(),
               builder: (context, snapshot) {
-                final stats = snapshot.data ?? {
-                  'bestStreak': 0,
-                  'totalCompletions': 0,
-                };
+                final stats = snapshot.data ??
+                    {
+                      'bestStreak': 0,
+                      'totalCompletions': 0,
+                    };
                 final bestStreak = stats['bestStreak'] as int;
                 final totalCompletions = stats['totalCompletions'] as int;
 
@@ -322,9 +325,7 @@ class StatisticsScreen extends ConsumerWidget {
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: spots.isEmpty
-                ? [const FlSpot(0, 0)]
-                : spots,
+            spots: spots.isEmpty ? [const FlSpot(0, 0)] : spots,
             isCurved: true,
             color: AppTheme.primaryBrown,
             barWidth: 4,
