@@ -4,5 +4,6 @@
         "riverpod",
         "sqflite",
         "swiftpm"
-    ]
+    ],
+    "cmake.ignoreCMakeListsMissing": true
 }
