@@ -11,11 +11,7 @@ void main() async {
   // Initialize notification service
   await NotificationService.instance.init();
 
-  runApp(
-    const ProviderScope(
-      child: HabitTrackerApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: HabitTrackerApp()));
 }
 
 class HabitTrackerApp extends ConsumerWidget {
