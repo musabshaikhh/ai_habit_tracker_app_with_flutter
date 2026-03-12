@@ -1,9 +1,0 @@
-{
-    "cSpell.words": [
-        "buildlog",
-        "riverpod",
-        "sqflite",
-        "swiftpm"
-    ],
-    "cmake.ignoreCMakeListsMissing": true
-}
