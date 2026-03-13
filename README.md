@@ -124,7 +124,3 @@ Instagram
 https://www.instagram.com/musab_dev/
 
 ⭐ If you like this project, please star the repository.
-
-Clean typography
-
-Calm color palette
