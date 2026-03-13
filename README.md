@@ -1,9 +1,6 @@
 🤖 AI Habit Tracker App (Flutter UI)
 
-
-
-
-
+<img width="236" height="499" alt="image" src="https://github.com/user-attachments/assets/7dde9236-f33d-47db-b579-7a14166a846e" />
 
 A modern AI Habit Tracker mobile app UI built with Flutter.
 This project focuses on designing a clean and modern user interface for a habit tracking application.
@@ -20,21 +17,21 @@ The AI Habit Tracker UI demonstrates how a habit tracking mobile app could look 
 
 The UI includes screens for:
 
-Habit management
+. Habit management
 
-Daily tracking
+. Daily tracking
 
-Habit progress visualization
+. Habit progress visualization
 
-Statistics dashboard
+. Statistics dashboard
 
 This project is mainly created for:
 
-Flutter UI practice
+. Flutter UI practice
 
-Portfolio demonstration
+. Portfolio demonstration
 
-Learning modern mobile app layout design
+. Learning modern mobile app layout design
 
 ✨ Features
 🧠 AI Habit Tracker Concept
@@ -43,29 +40,29 @@ A UI concept for an AI-powered habit tracking app that could recommend habits an
 
 📝 Habit Management UI
 
-Create habits
+. Create habits
 
-Display habit cards
+. Display habit cards
 
-Track daily completion
+. Track daily completion
 
 📊 Progress Tracking UI
 
-Habit streak display
+. Habit streak display
 
-Progress indicators
+. Progress indicators
 
-Statistics screen layout
+. Statistics screen layout
 
 🎨 Clean UI Design
 
-Minimal layout
+. Minimal layout
 
-Rounded UI components
+. Rounded UI components
 
-Soft color palette
+. Soft color palette
 
-Modern mobile interface
+. Modern mobile interface
 
 📱 Responsive Layout
 
@@ -75,23 +72,23 @@ Works across different device sizes using Flutter responsive widgets.
 
 The UI follows modern mobile design principles:
 
-Minimal design
+. Minimal design
 
-Smooth layout spacing
+. Smooth layout spacing
 
-Simple navigation
+. Simple navigation
 
-Clean typography
+. Clean typography
 
-Calm color palette
+. Calm color palette
 
 🛠 Built With
 
-Flutter
+. Flutter
 
-Dart
+. Dart
 
-Material Design
+. Material Design
 
 Flutter is commonly used for building cross-platform mobile apps from a single codebase, enabling apps to run on Android and iOS efficiently.
 
@@ -100,17 +97,17 @@ Flutter is commonly used for building cross-platform mobile apps from a single c
 
 Planned features for future versions:
 
-🤖 AI habit recommendations
+. 🤖 AI habit recommendations
 
-☁️ Firebase backend integration
+. ☁️ Firebase backend integration
 
-📊 Real habit statistics
+. 📊 Real habit statistics
 
-🔔 Reminder notifications
+. 🔔 Reminder notifications
 
-📅 Habit calendar tracking
+. 📅 Habit calendar tracking
 
-📈 Advanced progress analytics
+. 📈 Advanced progress analytics
 
 
 👨‍💻 Author
