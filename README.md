@@ -114,7 +114,7 @@ Planned features:
 **Musab Shaikh**
 
 - GitHub: https://github.com/musabshaikhh  
-- Instagram: https://www.instagram.com/musab_dev/  
+- Instagram: https://www.instagram.com/musab_codes/  
 
 ---
 
